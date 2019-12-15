@@ -1,0 +1,73 @@
+<!-- Include Quill stylesheet -->
+<link href="https://cdn.quilljs.com/1.0.0/quill.snow.css" rel="stylesheet">
+
+<!-- Create the toolbar container -->
+<div id="toolbar">
+  <button class="ql-bold">Bold</button>
+  <button class="ql-italic">Italic</button>
+  <button onclick="writeToDisk()">Write</button>
+
+</div>
+
+<!-- Create the editor container -->
+<div id="editor">
+  <p>Hello World!</p>
+</div>
+
+<!-- Include the Quill library -->
+<script>
+  window.Quill = require('quill');
+  window.fs = require('fs');
+  window.electron = require('electron');
+  window.path = require('path');
+</script>
+
+<!-- Initialize Quill editor -->
+<script>
+  const quill = new Quill('#editor', {
+    modules: { toolbar: '#toolbar' },
+    theme: 'snow',
+  })
+
+  const Delta = Quill.import('delta')
+  let change = new Delta()
+  quill.on('text-change', (delta => {
+    change = change.compose(delta)
+  }))
+
+  function writeToDisk() {
+    const text = quill.getText()
+    console.log(`text: ${text}`)
+    const dt = new Date()
+    const appPath = electron.remote.app.getAppPath()
+    const fileName = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}.txt`
+    const filePath = path.join(appPath, fileName)
+    const writeCallback = (error) => {
+      if (error) {
+        alert(`Could not write to file ${fileName}. Error: ${error}`)
+      } else {
+        console.log(`text: ${text} successfully written`)
+        // window.showInformationMessage(`Text successfully written to file ${fileName}`)
+      }
+    }
+    fs.writeFile(filePath, text, writeCallback)
+
+    // fs.exists(filePath, (exists) => {
+    //   console.log(`exists: ${exists}`)
+    //   const writeCallback = (error) => {
+    //     if (error) {
+    //       alert(`Could not write to file ${fileName}. Error: ${error}`)
+    //     } else {
+    //       console.log(`text: ${text} successfully written`)
+    //       // window.showInformationMessage(`Text successfully written to file ${fileName}`)
+    //     }
+    //   }
+
+    //   if (!exists) {
+    //     fs.writeFile(filePath, text, writeCallback)
+    //   } else {
+    //     fs.writeFile(filePath, text, writeCallback)
+    //   }
+    // })
+  }
+</script>
