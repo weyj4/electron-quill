@@ -20,6 +20,8 @@
   window.fs = require('fs');
   window.electron = require('electron');
   window.path = require('path');
+  window.low = require('lowdb');
+  window.FileSync = require('lowdb/adapters/FileSync');
 </script>
 
 <!-- Initialize Quill editor -->
@@ -37,37 +39,28 @@
 
   function writeToDisk() {
     const text = quill.getText()
-    console.log(`text: ${text}`)
+
     const dt = new Date()
     const appPath = electron.remote.app.getAppPath()
-    const fileName = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}.txt`
+    const fileName = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}.json`
     const filePath = path.join(appPath, fileName)
-    const writeCallback = (error) => {
-      if (error) {
-        alert(`Could not write to file ${fileName}. Error: ${error}`)
-      } else {
-        console.log(`text: ${text} successfully written`)
-        // window.showInformationMessage(`Text successfully written to file ${fileName}`)
-      }
+
+    const adapter = new FileSync(filePath)
+    const db = low(adapter)
+
+    db.defaults({ writes: [], count: 0 })
+      .write()
+
+    const output = {
+      id: Date.now(),
+      text
     }
-    fs.writeFile(filePath, text, writeCallback)
 
-    // fs.exists(filePath, (exists) => {
-    //   console.log(`exists: ${exists}`)
-    //   const writeCallback = (error) => {
-    //     if (error) {
-    //       alert(`Could not write to file ${fileName}. Error: ${error}`)
-    //     } else {
-    //       console.log(`text: ${text} successfully written`)
-    //       // window.showInformationMessage(`Text successfully written to file ${fileName}`)
-    //     }
-    //   }
+    db.get('writes')
+      .push(output)
+      .write()
 
-    //   if (!exists) {
-    //     fs.writeFile(filePath, text, writeCallback)
-    //   } else {
-    //     fs.writeFile(filePath, text, writeCallback)
-    //   }
-    // })
+    db.update('count', n => n + 1)
+      .write()
   }
 </script>
